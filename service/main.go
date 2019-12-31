@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"fmt"
@@ -30,11 +30,6 @@ type Service struct {
 	app       *tview.Application
 	table     *tview.Table
 	instances []Instance
-}
-
-func main() {
-	s := NewService()
-	s.Run()
 }
 
 // NewService ...
