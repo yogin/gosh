@@ -14,6 +14,15 @@ import (
 	"github.com/rivo/tview"
 )
 
+// DefaultProfile is the default AWS Profile
+const DefaultProfile = "default"
+
+// Config holds service settings
+type Config struct {
+	Profile *string
+	Args    []string
+}
+
 // Instance holds an ec2 instance information
 type Instance struct {
 	ID       string
@@ -26,6 +35,7 @@ type Instance struct {
 
 // Service holds internal state
 type Service struct {
+	config    *Config
 	svc       *ec2.EC2
 	app       *tview.Application
 	table     *tview.Table
@@ -33,7 +43,7 @@ type Service struct {
 }
 
 // NewService returns a new service instance
-func NewService() *Service {
+func NewService(conf *Config) *Service {
 	app := tview.NewApplication()
 
 	table := tview.NewTable().
@@ -43,7 +53,15 @@ func NewService() *Service {
 
 	app.SetRoot(table, true)
 
+	if conf == nil {
+		p := DefaultProfile
+		conf = &Config{
+			Profile: &p,
+		}
+	}
+
 	s := Service{
+		config:    conf,
 		app:       app,
 		table:     table,
 		instances: make(map[string]Instance),
@@ -90,7 +108,7 @@ func (s *Service) ec2svc() {
 		[]credentials.Provider{
 			// &credentials.EnvProvider{},
 			&credentials.SharedCredentialsProvider{
-				Profile: "default",
+				Profile: *s.config.Profile,
 			},
 		},
 	)
@@ -98,7 +116,7 @@ func (s *Service) ec2svc() {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 		Config:            aws.Config{Credentials: creds},
-		Profile:           "default",
+		Profile:           *s.config.Profile,
 	}))
 
 	// s.svc = ec2.New(session.Must(session.NewSession(conf)))
