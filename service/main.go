@@ -14,7 +14,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-// Instance ...
+// Instance holds an ec2 instance information
 type Instance struct {
 	ID       string
 	IP       string
@@ -24,7 +24,7 @@ type Instance struct {
 	Type     string
 }
 
-// Service ...
+// Service holds internal state
 type Service struct {
 	svc       *ec2.EC2
 	app       *tview.Application
@@ -32,7 +32,7 @@ type Service struct {
 	instances map[string]Instance
 }
 
-// NewService ...
+// NewService returns a new service instance
 func NewService() *Service {
 	app := tview.NewApplication()
 
@@ -52,7 +52,7 @@ func NewService() *Service {
 	return &s
 }
 
-// Run ...
+// Run starts the application
 func (s *Service) Run() {
 	s.table.SetSelectedFunc(s.handleSelected)
 	s.ec2svc()
@@ -89,17 +89,20 @@ func (s *Service) ec2svc() {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			// &credentials.EnvProvider{},
-			&credentials.SharedCredentialsProvider{},
+			&credentials.SharedCredentialsProvider{
+				Profile: "default",
+			},
 		},
 	)
 
-	region := os.Getenv("AWS_REGION")
-	conf := &aws.Config{
-		Credentials: creds,
-		Region:      &region,
-	}
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+		Config:            aws.Config{Credentials: creds},
+		Profile:           "default",
+	}))
 
-	s.svc = ec2.New(session.Must(session.NewSession(conf)))
+	// s.svc = ec2.New(session.Must(session.NewSession(conf)))
+	s.svc = ec2.New(sess)
 }
 
 func (s *Service) fetchInstances() {
