@@ -29,7 +29,7 @@ type Service struct {
 	svc       *ec2.EC2
 	app       *tview.Application
 	table     *tview.Table
-	instances []Instance
+	instances map[string]Instance
 }
 
 // NewService ...
@@ -46,7 +46,7 @@ func NewService() *Service {
 	s := Service{
 		app:       app,
 		table:     table,
-		instances: []Instance{},
+		instances: make(map[string]Instance),
 	}
 
 	return &s
@@ -64,11 +64,13 @@ func (s *Service) Run() {
 func (s *Service) handleSelected(row int, col int) {
 	cell := s.table.GetCell(row, col)
 	ref := cell.GetReference()
-	instance := s.instances[ref.(int)]
+	instance, ok := s.instances[ref.(string)]
 
-	s.app.Suspend(func() {
-		s.sshInstance(instance.IP)
-	})
+	if ok {
+		s.app.Suspend(func() {
+			s.sshInstance(instance.IP)
+		})
+	}
 }
 
 func (s *Service) sshInstance(ip string) {
@@ -116,7 +118,7 @@ func (s *Service) fetchInstances() {
 				Type:  *instance.InstanceType,
 			}
 
-			s.instances = append(s.instances, i)
+			s.instances[i.ID] = i
 		}
 	}
 }
@@ -125,7 +127,7 @@ func (s *Service) updateTable() {
 	headers := []string{"ID", "IP", "State", "AZ", "Type"}
 	row := 0
 
-	for i, instance := range s.instances {
+	for _, instance := range s.instances {
 		values := []string{
 			instance.ID,
 			instance.IP,
@@ -147,7 +149,7 @@ func (s *Service) updateTable() {
 
 			cell := tview.NewTableCell(val).
 				SetSelectable(true).
-				SetReference(i)
+				SetReference(instance.ID)
 			s.table.SetCell(row, col, cell)
 		}
 
