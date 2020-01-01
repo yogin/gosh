@@ -1,11 +1,7 @@
 package service
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"os/exec"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -14,23 +10,15 @@ import (
 	"github.com/rivo/tview"
 )
 
-// DefaultProfile is the default AWS Profile
-const DefaultProfile = "default"
+const (
+	// DefaultProfile is the default AWS Profile
+	DefaultProfile = "default"
+)
 
 // Config holds service settings
 type Config struct {
 	Profile *string
 	Args    []string
-}
-
-// Instance holds an ec2 instance information
-type Instance struct {
-	ID       string
-	IP       string
-	State    string
-	AZ       string
-	Launched string
-	Type     string
 }
 
 // Service holds internal state
@@ -39,7 +27,7 @@ type Service struct {
 	svc       *ec2.EC2
 	app       *tview.Application
 	table     *tview.Table
-	instances map[string]Instance
+	instances map[string]*Instance
 }
 
 // NewService returns a new service instance
@@ -64,7 +52,7 @@ func NewService(conf *Config) *Service {
 		config:    conf,
 		app:       app,
 		table:     table,
-		instances: make(map[string]Instance),
+		instances: make(map[string]*Instance),
 	}
 
 	return &s
@@ -76,6 +64,10 @@ func (s *Service) Run() {
 	s.ec2svc()
 	s.fetchInstances()
 	s.updateTable()
+
+	// for _, i := range s.instances {
+	// 	fmt.Printf("%+v\n", i)
+	// }
 	s.app.Run()
 }
 
@@ -86,20 +78,8 @@ func (s *Service) handleSelected(row int, col int) {
 
 	if ok {
 		s.app.Suspend(func() {
-			s.sshInstance(instance.IP)
+			instance.runSSH()
 		})
-	}
-}
-
-func (s *Service) sshInstance(ip string) {
-	cmd := exec.Command("ssh", ip)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Command failed: %s", err)
-		time.Sleep(time.Second * 3)
 	}
 }
 
@@ -131,43 +111,47 @@ func (s *Service) fetchInstances() {
 
 	for _, reservation := range res.Reservations {
 		for _, instance := range reservation.Instances {
-			i := Instance{
-				ID:    *instance.InstanceId,
-				IP:    *instance.PrivateIpAddress,
-				State: *instance.State.Name,
-				AZ:    *instance.Placement.AvailabilityZone,
-				Type:  *instance.InstanceType,
-			}
-
+			i := NewInstance(instance)
 			s.instances[i.ID] = i
 		}
 	}
 }
 
 func (s *Service) updateTable() {
+	tagsNames := selectedTags(s.instances)
+	tagsCount := len(tagsNames)
 	headers := []string{"ID", "IP", "State", "AZ", "Type"}
 	row := 0
 
 	for _, instance := range s.instances {
-		values := []string{
+		tags := instance.TagValues(tagsNames)
+		vals := []string{
 			instance.ID,
 			instance.IP,
 			instance.State,
 			instance.AZ,
 			instance.Type,
 		}
+		values := append(tags, vals...)
 
-		for col, val := range values {
-			if row == 0 {
-				for c, h := range headers {
-					head := tview.NewTableCell(h).
-						SetSelectable(false)
-					s.table.SetCell(0, c, head)
-				}
-
-				row++
+		// render headers
+		if row == 0 {
+			for c, t := range tagsNames {
+				tag := tview.NewTableCell("Tag:" + t).
+					SetSelectable(false)
+				s.table.SetCell(0, c, tag)
 			}
 
+			for c, h := range headers {
+				head := tview.NewTableCell(h).
+					SetSelectable(false)
+				s.table.SetCell(0, c+tagsCount, head)
+			}
+
+			row++
+		}
+
+		for col, val := range values {
 			cell := tview.NewTableCell(val).
 				SetSelectable(true).
 				SetReference(instance.ID)
