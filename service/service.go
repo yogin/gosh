@@ -2,6 +2,7 @@ package service
 
 import (
 	"log"
+	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -123,7 +124,13 @@ func (s *Service) updateTable() {
 	headers := []string{"ID", "IP", "State", "AZ", "Type"}
 	row := 0
 
-	for _, instance := range s.instances {
+	insts := []*Instance{}
+	for _, i := range s.instances {
+		insts = append(insts, i)
+	}
+	sort.Sort(InstanceSort(insts))
+
+	for _, instance := range insts {
 		tags := instance.TagValues(tagsNames)
 		vals := []string{
 			instance.ID,
