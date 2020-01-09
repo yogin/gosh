@@ -29,10 +29,11 @@ type Instance struct {
 
 // NewInstance returns a new Instance from an AWS EC2 Instance
 func NewInstance(i *ec2.Instance) *Instance {
+
 	instance := &Instance{
 		raw:   i,
 		ID:    *i.InstanceId,
-		IP:    *i.PrivateIpAddress,
+		IP:    safeIP(i),
 		State: *i.State.Name,
 		AZ:    *i.Placement.AvailabilityZone,
 		Type:  *i.InstanceType,
@@ -41,6 +42,16 @@ func NewInstance(i *ec2.Instance) *Instance {
 	instance.extractTags()
 
 	return instance
+}
+
+func safeIP(i *ec2.Instance) string {
+	ip := ""
+
+	if i.PrivateIpAddress != nil {
+		ip = *i.PrivateIpAddress
+	}
+
+	return ip
 }
 
 func (i *Instance) extractTags() {
