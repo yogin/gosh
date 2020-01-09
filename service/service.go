@@ -77,7 +77,7 @@ func (s *Service) handleSelected(row int, col int) {
 	ref := cell.GetReference()
 	instance, ok := s.instances[ref.(string)]
 
-	if ok {
+	if ok && len(instance.IP) > 0 {
 		s.app.Suspend(func() {
 			instance.runSSH()
 		})
