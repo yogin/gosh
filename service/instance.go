@@ -17,26 +17,28 @@ var (
 
 // Instance holds an ec2 instance information
 type Instance struct {
-	raw      *ec2.Instance
-	ID       string
-	IP       string
-	State    string
-	AZ       string
-	Launched string
-	Type     string
-	Tags     map[string]string
+	raw       *ec2.Instance
+	ID        string
+	PrivateIP string
+	PublicIP  string
+	State     string
+	AZ        string
+	Launched  string
+	Type      string
+	Tags      map[string]string
 }
 
 // NewInstance returns a new Instance from an AWS EC2 Instance
 func NewInstance(i *ec2.Instance) *Instance {
 
 	instance := &Instance{
-		raw:   i,
-		ID:    *i.InstanceId,
-		IP:    safeIP(i),
-		State: *i.State.Name,
-		AZ:    *i.Placement.AvailabilityZone,
-		Type:  *i.InstanceType,
+		raw:       i,
+		ID:        *i.InstanceId,
+		PrivateIP: safeIP(i.PrivateIpAddress),
+		PublicIP:  safeIP(i.PublicIpAddress),
+		State:     *i.State.Name,
+		AZ:        *i.Placement.AvailabilityZone,
+		Type:      *i.InstanceType,
 	}
 
 	instance.extractTags()
@@ -44,14 +46,12 @@ func NewInstance(i *ec2.Instance) *Instance {
 	return instance
 }
 
-func safeIP(i *ec2.Instance) string {
-	ip := ""
-
-	if i.PrivateIpAddress != nil {
-		ip = *i.PrivateIpAddress
+func safeIP(ip *string) string {
+	if ip == nil {
+		return ""
 	}
 
-	return ip
+	return *ip
 }
 
 func (i *Instance) extractTags() {
@@ -72,7 +72,7 @@ func (i *Instance) extractTags() {
 }
 
 func (i *Instance) runSSH() {
-	cmd := exec.Command("ssh", i.IP)
+	cmd := exec.Command("ssh", i.PrivateIP)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

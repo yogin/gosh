@@ -77,7 +77,7 @@ func (s *Service) handleSelected(row int, col int) {
 	ref := cell.GetReference()
 	instance, ok := s.instances[ref.(string)]
 
-	if ok && len(instance.IP) > 0 {
+	if ok && len(instance.PrivateIP) > 0 {
 		s.app.Suspend(func() {
 			instance.runSSH()
 		})
@@ -121,7 +121,7 @@ func (s *Service) fetchInstances() {
 func (s *Service) updateTable() {
 	tagsNames := selectedTags(s.instances)
 	tagsCount := len(tagsNames)
-	headers := []string{"ID", "IP", "State", "AZ", "Type"}
+	headers := []string{"ID", "Private IP", "Public IP", "State", "AZ", "Type"}
 	row := 0
 
 	insts := []*Instance{}
@@ -134,7 +134,8 @@ func (s *Service) updateTable() {
 		tags := instance.TagValues(tagsNames)
 		vals := []string{
 			instance.ID,
-			instance.IP,
+			instance.PrivateIP,
+			instance.PublicIP,
 			instance.State,
 			instance.AZ,
 			instance.Type,
