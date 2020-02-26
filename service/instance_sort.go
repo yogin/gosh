@@ -18,7 +18,7 @@ func (a InstanceSort) Less(i, j int) bool {
 		}
 	}
 
-	return false
+	return a[i].ID < a[j].ID
 }
 
 func (a InstanceSort) Swap(i, j int) {

@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 )
 
@@ -66,6 +67,22 @@ func (s *Service) Run() {
 	s.fetchInstances()
 	s.updateTable()
 
+	s.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'r', 'R':
+			s.fetchInstances()
+			s.updateTable()
+			return nil
+
+			// case 's':
+			// 	row, col := s.table.GetSelection()
+			// 	s.handleSelected(row, col)
+			// 	return nil
+		}
+
+		return event
+	})
+
 	// for _, i := range s.instances {
 	// 	fmt.Printf("%+v\n", i)
 	// }
@@ -110,12 +127,14 @@ func (s *Service) fetchInstances() {
 		log.Fatalln(err.Error())
 	}
 
+	insts := map[string]*Instance{}
 	for _, reservation := range res.Reservations {
 		for _, instance := range reservation.Instances {
 			i := NewInstance(instance)
-			s.instances[i.ID] = i
+			insts[i.ID] = i
 		}
 	}
+	s.instances = insts
 }
 
 func (s *Service) updateTable() {
