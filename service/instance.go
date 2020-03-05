@@ -25,6 +25,7 @@ type Instance struct {
 	AZ        string
 	Launched  string
 	Type      string
+	AMI       string
 	Tags      map[string]string
 }
 
@@ -39,6 +40,7 @@ func NewInstance(i *ec2.Instance) *Instance {
 		State:     *i.State.Name,
 		AZ:        *i.Placement.AvailabilityZone,
 		Type:      *i.InstanceType,
+		AMI:       *i.ImageId,
 	}
 
 	instance.extractTags()
