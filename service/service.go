@@ -152,8 +152,11 @@ func (s *Service) updateTable() {
 
 	for _, instance := range insts {
 		color := "[white]"
-		if instance.State == "terminated" {
+		switch instance.State {
+		case "terminated":
 			color = "[grey]"
+		case "pending", "stopping", "shutting-down":
+			color = "[orange]"
 		}
 
 		tags := instance.TagValues(tagsNames)
