@@ -140,7 +140,7 @@ func (s *Service) fetchInstances() {
 func (s *Service) updateTable() {
 	tagsNames := selectedTags(s.instances)
 	tagsCount := len(tagsNames)
-	headers := []string{"ID", "Private IP", "Public IP", "State", "AZ", "Type", "AMI"}
+	headers := []string{"ID", "Private IP", "Public IP", "State", "AZ", "Type", "AMI", "Running"}
 	row := 0
 
 	insts := []*Instance{}
@@ -159,6 +159,7 @@ func (s *Service) updateTable() {
 			instance.AZ,
 			instance.Type,
 			instance.AMI,
+			instance.RunningSince(),
 		}
 		values := append(tags, vals...)
 

@@ -23,7 +23,7 @@ type Instance struct {
 	PublicIP  string
 	State     string
 	AZ        string
-	Launched  string
+	Launched  time.Time
 	Type      string
 	AMI       string
 	Tags      map[string]string
@@ -41,6 +41,7 @@ func NewInstance(i *ec2.Instance) *Instance {
 		AZ:        *i.Placement.AvailabilityZone,
 		Type:      *i.InstanceType,
 		AMI:       *i.ImageId,
+		Launched:  *i.LaunchTime,
 	}
 
 	instance.extractTags()
@@ -121,4 +122,31 @@ func selectedTags(instances map[string]*Instance) []string {
 	}
 
 	return keys
+}
+
+// RunningSince returns how old the instance is as a string
+// eg. 1 day ago, 10 minutes ago, ...
+func (i *Instance) RunningSince() string {
+	elasped := time.Since(i.Launched)
+
+	minutes := int(elasped.Minutes())
+	hours := minutes / 60
+	minutes = minutes % 60
+
+	days := hours / 24
+	hours = hours % 24
+
+	parts := []string{}
+
+	if days > 0 {
+		parts = append(parts, fmt.Sprintf("%d days", days))
+	}
+
+	if days > 0 {
+		parts = append(parts, fmt.Sprintf("%d hours", hours))
+	}
+
+	parts = append(parts, fmt.Sprintf("%d mins", minutes))
+
+	return strings.Join(parts, ", ")
 }
