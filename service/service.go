@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"sort"
 
@@ -150,6 +151,11 @@ func (s *Service) updateTable() {
 	sort.Sort(InstanceSort(insts))
 
 	for _, instance := range insts {
+		color := "[white]"
+		if instance.State == "terminated" {
+			color = "[grey]"
+		}
+
 		tags := instance.TagValues(tagsNames)
 		vals := []string{
 			instance.ID,
@@ -181,7 +187,7 @@ func (s *Service) updateTable() {
 		}
 
 		for col, val := range values {
-			cell := tview.NewTableCell(val).
+			cell := tview.NewTableCell(fmt.Sprintf("%s%s[-:-:-]", color, val)).
 				SetSelectable(true).
 				SetReference(instance.ID)
 			s.table.SetCell(row, col, cell)
