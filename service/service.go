@@ -185,13 +185,17 @@ func (s *Service) updateTable() {
 		if row == 0 {
 			for c, t := range tagsNames {
 				tag := tview.NewTableCell("Tag:" + t).
-					SetSelectable(false)
+					SetSelectable(false).
+					SetAttributes(tcell.AttrBold).
+					SetBackgroundColor(tcell.ColorDimGrey)
 				s.table.SetCell(0, c, tag)
 			}
 
 			for c, h := range headers {
 				head := tview.NewTableCell(h).
-					SetSelectable(false)
+					SetSelectable(false).
+					SetAttributes(tcell.AttrBold).
+					SetBackgroundColor(tcell.ColorDimGrey)
 				s.table.SetCell(0, c+tagsCount, head)
 			}
 
