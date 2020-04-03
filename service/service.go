@@ -159,11 +159,12 @@ func (s *Service) updateTable() {
 		case "terminated":
 			color = "[grey]"
 		case "pending", "stopping", "shutting-down":
-			color = "[orange]"
+			color = "[crimson]"
 		case "running":
-			if instance.IsRunningLessThan(10) {
-				// instance started less than 10 mins ago
+			if instance.IsRunningLessThan(10) { // 10 minutes
 				color = "[palegreen]"
+			} else if instance.IsRunningMoreThan(129600) { //  129600 minutes = 90 days (1 quarter)
+				color = "[orange]"
 			}
 		}
 

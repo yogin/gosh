@@ -166,8 +166,14 @@ func (i *Instance) RunningDescription() string {
 	return strings.Join(parts, " ")
 }
 
-// IsRunningLessThan returns a boolean if instance was launched recently
+// IsRunningLessThan indicates if the instance was started less than X minutes ago
 func (i *Instance) IsRunningLessThan(mins int) bool {
 	elapsed := time.Since(i.Launched)
 	return int(elapsed.Minutes()) < mins
+}
+
+// IsRunningMoreThan indicates if the instance was started more than X minutes ago
+func (i *Instance) IsRunningMoreThan(mins int) bool {
+	elapsed := time.Since(i.Launched)
+	return int(elapsed.Minutes()) > mins
 }
