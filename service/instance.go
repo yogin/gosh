@@ -127,6 +127,10 @@ func selectedTags(instances map[string]*Instance) []string {
 // RunningDescription returns how old the instance is as a string
 // eg. 1 day ago, 10 minutes ago, ...
 func (i *Instance) RunningDescription() string {
+	if i.State == "terminated" {
+		return ""
+	}
+
 	elasped := time.Since(i.Launched)
 
 	minutes := int(elasped.Minutes())
