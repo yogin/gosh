@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"log"
 	"sort"
 
@@ -152,19 +151,20 @@ func (s *Service) updateTable() {
 
 	for _, instance := range insts {
 
-		// for using colors, see https://godoc.org/github.com/rivo/tview#hdr-Colors
-		// for color names, see https://www.w3schools.com/colors/colors_names.asp
-		color := "[white]"
+		// https://godoc.org/github.com/rivo/tview#hdr-Colors
+		// https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#Color
+		// https://www.w3schools.com/colors/colors_names.asp
+		color := tcell.ColorWhite
 		switch instance.State {
 		case "terminated":
-			color = "[grey]"
+			color = tcell.ColorGrey
 		case "pending", "stopping", "shutting-down":
-			color = "[crimson]"
+			color = tcell.ColorCrimson
 		case "running":
 			if instance.IsRunningLessThan(10) { // 10 minutes
-				color = "[palegreen]"
+				color = tcell.ColorPaleGreen
 			} else if instance.IsRunningMoreThan(129600) { //  129600 minutes = 90 days (1 quarter)
-				color = "[orange]"
+				color = tcell.ColorOrange
 			}
 		}
 
@@ -199,9 +199,10 @@ func (s *Service) updateTable() {
 		}
 
 		for col, val := range values {
-			cell := tview.NewTableCell(fmt.Sprintf("%s%s[-:-:-]", color, val)).
+			cell := tview.NewTableCell(val).
 				SetSelectable(true).
-				SetReference(instance.ID)
+				SetReference(instance.ID).
+				SetTextColor(color)
 			s.table.SetCell(row, col, cell)
 		}
 
