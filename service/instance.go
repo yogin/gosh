@@ -150,3 +150,13 @@ func (i *Instance) RunningSince() string {
 
 	return strings.Join(parts, ", ")
 }
+
+// StartedSince returns a boolean if instance was launched recently
+func (i *Instance) StartedSince(mins int) bool {
+	elapsed := time.Since(i.Launched)
+	if int(elapsed.Minutes()) < mins {
+		return true
+	}
+
+	return false
+}

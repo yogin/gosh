@@ -157,6 +157,11 @@ func (s *Service) updateTable() {
 			color = "[grey]"
 		case "pending", "stopping", "shutting-down":
 			color = "[orange]"
+		default:
+			if instance.StartedSince(10) {
+				// instance started less than 10 mins ago
+				color = "[palegreen]"
+			}
 		}
 
 		tags := instance.TagValues(tagsNames)
