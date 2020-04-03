@@ -139,16 +139,31 @@ func (i *Instance) RunningDescription() string {
 	parts := []string{}
 
 	if days > 0 {
-		parts = append(parts, fmt.Sprintf("%d days", days))
+		unit := "day"
+		if days > 1 {
+			unit += "s"
+		}
+
+		parts = append(parts, fmt.Sprintf("%d %s", days, unit))
 	}
 
 	if hours > 0 {
-		parts = append(parts, fmt.Sprintf("%d hours", hours))
+		unit := "hour"
+		if hours > 1 {
+			unit += "s"
+		}
+
+		parts = append(parts, fmt.Sprintf("%d %s", hours, unit))
 	}
 
-	parts = append(parts, fmt.Sprintf("%d mins", minutes))
+	unit := "min"
+	if minutes > 1 {
+		unit += "s"
+	}
 
-	return strings.Join(parts, ", ")
+	parts = append(parts, fmt.Sprintf("%d %s", minutes, unit))
+
+	return strings.Join(parts, " ")
 }
 
 // IsRunningLessThan returns a boolean if instance was launched recently
