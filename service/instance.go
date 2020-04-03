@@ -124,9 +124,9 @@ func selectedTags(instances map[string]*Instance) []string {
 	return keys
 }
 
-// RunningSince returns how old the instance is as a string
+// RunningDescription returns how old the instance is as a string
 // eg. 1 day ago, 10 minutes ago, ...
-func (i *Instance) RunningSince() string {
+func (i *Instance) RunningDescription() string {
 	elasped := time.Since(i.Launched)
 
 	minutes := int(elasped.Minutes())
@@ -142,7 +142,7 @@ func (i *Instance) RunningSince() string {
 		parts = append(parts, fmt.Sprintf("%d days", days))
 	}
 
-	if days > 0 {
+	if hours > 0 {
 		parts = append(parts, fmt.Sprintf("%d hours", hours))
 	}
 
@@ -151,12 +151,8 @@ func (i *Instance) RunningSince() string {
 	return strings.Join(parts, ", ")
 }
 
-// StartedSince returns a boolean if instance was launched recently
-func (i *Instance) StartedSince(mins int) bool {
+// IsRunningLessThan returns a boolean if instance was launched recently
+func (i *Instance) IsRunningLessThan(mins int) bool {
 	elapsed := time.Since(i.Launched)
-	if int(elapsed.Minutes()) < mins {
-		return true
-	}
-
-	return false
+	return int(elapsed.Minutes()) < mins
 }

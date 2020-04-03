@@ -151,14 +151,17 @@ func (s *Service) updateTable() {
 	sort.Sort(InstanceSort(insts))
 
 	for _, instance := range insts {
+
+		// for using colors, see https://godoc.org/github.com/rivo/tview#hdr-Colors
+		// for color names, see https://www.w3schools.com/colors/colors_names.asp
 		color := "[white]"
 		switch instance.State {
 		case "terminated":
 			color = "[grey]"
 		case "pending", "stopping", "shutting-down":
 			color = "[orange]"
-		default:
-			if instance.StartedSince(10) {
+		case "running":
+			if instance.IsRunningLessThan(10) {
 				// instance started less than 10 mins ago
 				color = "[palegreen]"
 			}
@@ -173,7 +176,7 @@ func (s *Service) updateTable() {
 			instance.AZ,
 			instance.Type,
 			instance.AMI,
-			instance.RunningSince(),
+			instance.RunningDescription(),
 		}
 		values := append(tags, vals...)
 
