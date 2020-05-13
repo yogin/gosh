@@ -156,12 +156,12 @@ func (s *Service) updateTable() {
 		// https://www.w3schools.com/colors/colors_names.asp
 		color := tcell.ColorWhite
 		switch instance.State {
-		case "terminated":
+		case "terminated", "stopped":
 			color = tcell.ColorGrey
 		case "pending", "stopping", "shutting-down":
 			color = tcell.ColorCrimson
 		case "running":
-			if instance.IsRunningLessThan(10) { // 10 minutes
+			if instance.IsRunningLessThan(15) { // 15 minutes
 				color = tcell.ColorPaleGreen
 			} else if instance.IsRunningMoreThan(129600) { //  129600 minutes = 90 days (1 quarter)
 				color = tcell.ColorOrange
