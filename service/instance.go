@@ -12,7 +12,7 @@ import (
 
 var (
 	// DefaultTags list of tags to look for
-	DefaultTags = []string{"name", "env", "environment", "stage", "role"}
+	DefaultTags = []string{"name", "env", "environment", "stage", "role", "build", "version"}
 )
 
 // Instance holds an ec2 instance information
