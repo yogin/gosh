@@ -70,8 +70,7 @@ func (s *Service) Run() {
 	s.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'r', 'R':
-			s.fetchInstances()
-			s.updateTable()
+			s.refreshTable()
 			return nil
 
 			// case 's':
@@ -90,6 +89,8 @@ func (s *Service) Run() {
 }
 
 func (s *Service) handleSelected(row int, col int) {
+	defer s.refreshTable()
+
 	cell := s.table.GetCell(row, col)
 	ref := cell.GetReference()
 	instance, ok := s.instances[ref.(string)]
@@ -99,6 +100,11 @@ func (s *Service) handleSelected(row int, col int) {
 			instance.runSSH()
 		})
 	}
+}
+
+func (s *Service) refreshTable() {
+	s.fetchInstances()
+	s.updateTable()
 }
 
 func (s *Service) ec2svc() {
