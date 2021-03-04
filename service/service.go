@@ -105,6 +105,7 @@ func (s *Service) handleSelected(row int, col int) {
 
 func (s *Service) refreshTable() {
 	s.fetchInstances()
+	s.table.Clear()
 	s.updateTable()
 }
 
