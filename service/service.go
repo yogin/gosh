@@ -160,17 +160,17 @@ func (s *Service) updateTable() {
 		// https://godoc.org/github.com/rivo/tview#hdr-Colors
 		// https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#Color
 		// https://www.w3schools.com/colors/colors_names.asp
-		color := tcell.ColorWhite
+		color := tcell.ColorWhite.TrueColor()
 		switch instance.State {
 		case "terminated", "stopped":
-			color = tcell.ColorGrey
+			color = tcell.ColorGrey.TrueColor()
 		case "pending", "stopping", "shutting-down":
-			color = tcell.ColorCrimson
+			color = tcell.ColorCrimson.TrueColor()
 		case "running":
 			if instance.IsRunningLessThan(15) { // 15 minutes
-				color = tcell.ColorPaleGreen
+				color = tcell.ColorPaleGreen.TrueColor()
 			} else if instance.IsRunningMoreThan(129600) { //  129600 minutes = 90 days (1 quarter)
-				color = tcell.ColorOrange
+				color = tcell.ColorOrange.TrueColor()
 			}
 		}
 
@@ -193,7 +193,7 @@ func (s *Service) updateTable() {
 				tag := tview.NewTableCell("Tag:" + t).
 					SetSelectable(false).
 					SetAttributes(tcell.AttrBold).
-					SetBackgroundColor(tcell.ColorDimGrey)
+					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
 				s.table.SetCell(0, c, tag)
 			}
 
@@ -201,7 +201,7 @@ func (s *Service) updateTable() {
 				head := tview.NewTableCell(h).
 					SetSelectable(false).
 					SetAttributes(tcell.AttrBold).
-					SetBackgroundColor(tcell.ColorDimGrey)
+					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
 				s.table.SetCell(0, c+tagsCount, head)
 			}
 
@@ -212,7 +212,8 @@ func (s *Service) updateTable() {
 			cell := tview.NewTableCell(val).
 				SetSelectable(true).
 				SetReference(instance.ID).
-				SetTextColor(color)
+				SetTextColor(color).
+				SetBackgroundColor(tcell.ColorBlack.TrueColor())
 			s.table.SetCell(row, col, cell)
 		}
 
