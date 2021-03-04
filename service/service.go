@@ -40,6 +40,7 @@ func NewService(conf *Config) *Service {
 		SetFixed(1, 0).
 		SetSelectable(true, false)
 	table.SetBorderPadding(0, 0, 1, 1)
+	table.SetBackgroundColor(tcell.ColorBlack.TrueColor())
 
 	app.SetRoot(table, true)
 
