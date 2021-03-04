@@ -4,7 +4,9 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.29.18
-	github.com/gdamore/tcell v1.3.0
-	github.com/rivo/tview v0.0.0-20200219210816-cd38d7432498
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	github.com/gdamore/tcell/v2 v2.2.0
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/rivo/tview v0.0.0-20210217110421-8a8f78a6dd01
+	golang.org/x/sys v0.0.0-20210303074136-134d130e1a04 // indirect
+	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 )
