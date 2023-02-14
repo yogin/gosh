@@ -3,7 +3,7 @@ module github.com/yogin/go-ec2
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.29.18
+	github.com/aws/aws-sdk-go v1.34.0
 	github.com/gdamore/tcell/v2 v2.2.0
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/rivo/tview v0.0.0-20210217110421-8a8f78a6dd01
