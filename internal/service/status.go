@@ -10,14 +10,13 @@ import (
 )
 
 type Status struct {
-	config    *config.Config
+	service   *Service
 	leftView  *tview.TextView
 	rightView *tview.TextView
 	view      *tview.Flex
-	app       *tview.Application
 }
 
-func NewStatus(app *tview.Application, cfg *config.Config) *Status {
+func NewStatus(service *Service) *Status {
 	leftView := tview.NewTextView()
 	leftView.SetWrap(false)
 	leftView.SetTextAlign(tview.AlignLeft)
@@ -33,11 +32,10 @@ func NewStatus(app *tview.Application, cfg *config.Config) *Status {
 	view.AddItem(rightView, 0, 1, false)
 
 	status := &Status{
-		config:    cfg,
+		service:   service,
 		view:      view,
 		leftView:  leftView,
 		rightView: rightView,
-		app:       app,
 	}
 	status.update()
 
@@ -52,7 +50,7 @@ func (s *Status) Start() {
 	// refresh every second
 	go func() {
 		for range time.Tick(time.Second) {
-			s.app.QueueUpdateDraw(func() {
+			s.service.GetApp().QueueUpdateDraw(func() {
 				s.update()
 			})
 		}
@@ -80,17 +78,17 @@ func (s *Status) renderTime() string {
 }
 
 func (s *Status) showLocalTime() bool {
-	return s.config.ShowLocalTime
+	return s.service.GetConfig().ShowLocalTime
 }
 
 func (s *Status) showUTCTime() bool {
-	return s.config.ShowUTCTime
+	return s.service.GetConfig().ShowUTCTime
 }
 
 func (s *Status) timeFormat() string {
-	if len(s.config.TimeFormat) == 0 {
+	if len(s.service.GetConfig().TimeFormat) == 0 {
 		return config.DefaultTimeFormat
 	}
 
-	return s.config.TimeFormat
+	return s.service.GetConfig().TimeFormat
 }

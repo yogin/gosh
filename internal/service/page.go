@@ -12,15 +12,15 @@ type Slider interface {
 }
 
 type Slide struct {
-	app      *tview.Application
+	service  *Service
 	profile  *config.Profile
 	provider providers.Provider
 	view     *tview.Table
 }
 
-func NewSlide(app *tview.Application, profile *config.Profile) *Slide {
+func NewSlide(service *Service, profile *config.Profile) *Slide {
 	s := &Slide{
-		app:     app,
+		service: service,
 		profile: profile,
 	}
 

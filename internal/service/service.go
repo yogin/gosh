@@ -35,7 +35,7 @@ func (s *Service) Run() error {
 
 	slides := make([]Slider, 0, len(s.config.Profiles))
 	for _, profile := range s.config.Profiles {
-		slides = append(slides, NewSlide(s.app, profile))
+		slides = append(slides, NewSlide(s, profile))
 	}
 
 	pages := tview.NewPages()
@@ -69,7 +69,7 @@ func (s *Service) Run() error {
 	}
 	info.Highlight("0")
 
-	status := NewStatus(s.app, s.config)
+	status := NewStatus(s)
 	status.Start()
 
 	layout := tview.NewFlex()
@@ -109,4 +109,12 @@ func (s *Service) Run() error {
 	s.app.SetRoot(layout, true)
 	s.app.EnableMouse(true)
 	return s.app.Run()
+}
+
+func (s *Service) GetConfig() *config.Config {
+	return s.config
+}
+
+func (s *Service) GetApp() *tview.Application {
+	return s.app
 }
