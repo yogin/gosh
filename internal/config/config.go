@@ -33,11 +33,17 @@ type Config struct {
 }
 
 type Profile struct {
-	ID             string `json:"id" yaml:"id"`                             // profile id
-	Provider       string `json:"provider" yaml:"provider"`                 // aws, gcp, azure
-	Name           string `json:"name" yaml:"name"`                         // provider profile name
-	Region         string `json:"region" yaml:"region"`                     // region (us-west-1, us-east-1, etc)
-	PreferPublicIP bool   `json:"prefer_public_ip" yaml:"prefer_public_ip"` // prefer public IP over private IP (default: false)
+	ID             string  `json:"id" yaml:"id"`                             // profile id (unique, used for navigation)
+	Provider       string  `json:"provider" yaml:"provider"`                 // aws, gcp, azure (only aws is supported for now)
+	Name           string  `json:"name" yaml:"name"`                         // provider profile name (eg. aws profile name)
+	Region         string  `json:"region" yaml:"region"`                     // region (us-west-1, us-east-1, etc)
+	PreferPublicIP bool    `json:"prefer_public_ip" yaml:"prefer_public_ip"` // prefer public IP over private IP (default: false)
+	Refresh        Refresh `json:"refresh" yaml:"refresh"`                   // auto refresh settings
+}
+
+type Refresh struct {
+	Enabled  bool `json:"enabled" yaml:"enabled"`   // auto refresh enabled (default: false)
+	Interval int  `json:"interval" yaml:"interval"` // refresh interval in seconds (default: 60)
 }
 
 func NewConfig(path *string) *Config {
@@ -68,6 +74,7 @@ func DefaultConfiguration() *Config {
 		ID:       "default",
 		Provider: "aws",
 		Name:     "default",
+		Refresh:  Refresh{Enabled: false, Interval: 60},
 	}
 
 	profiles := make([]*Profile, 0)

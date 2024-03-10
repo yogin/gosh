@@ -36,7 +36,10 @@ func NewService(cfg *config.Config) *Service {
 func (s *Service) Run() error {
 	s.app = tview.NewApplication()
 
-	// status must be started before any other component so it can receive status updates
+	// devlog must be started before any other component so it can receive log messages
+	s.devlog = NewDevLog(s)
+
+	// status must be started before any other component so it can receive status updates (but after devlog)
 	s.status = NewStatus(s)
 	s.status.Start()
 
@@ -76,8 +79,6 @@ func (s *Service) Run() error {
 	}
 	menu.Highlight("0")
 
-	s.devlog = NewDevLog(s)
-
 	main := tview.NewFlex()
 	main.SetDirection(tview.FlexColumn)
 	main.AddItem(pages, 0, 1, true)                         // slides
@@ -91,7 +92,7 @@ func (s *Service) Run() error {
 
 	// global input capture, widgets can have their own input capture
 	s.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		s.Log("Key pressed Name=%s, Key=%d, Rune=%d", event.Name(), event.Key(), event.Rune())
+		s.Log("app", "Key pressed Name=%s, Key=%d, Rune=%d", event.Name(), event.Key(), event.Rune())
 
 		switch event.Key() {
 		case tcell.KeyCtrlN, tcell.KeyTab:
@@ -116,12 +117,12 @@ func (s *Service) Run() error {
 				slideID, _ := strconv.Atoi(string(event.Rune()))
 				slideName := strconv.Itoa(slideID - 1)
 				if pages.HasPage(slideName) {
-					s.Log("Page found: %s (%d)", slideName, slideID)
+					s.Log("app", "Page found: %s (%d)", slideName, slideID)
 					pages.SwitchToPage(slideName)
 					menu.Highlight(slideName)
 					menu.ScrollToHighlight()
 				} else {
-					s.Log("Page not found: %s (%d)", slideName, slideID)
+					s.Log("app", "Page not found: %s (%d)", slideName, slideID)
 				}
 
 			case '`':
@@ -145,21 +146,26 @@ func (s *Service) GetApp() *tview.Application {
 	return s.app
 }
 
-func (s Service) SetStatusText(format string, a ...interface{}) {
+func (s Service) SetStatusText(prefix string, format string, a ...interface{}) {
 	if s.status == nil {
 		return
 	}
 
 	s.status.SetStatusText(format, a...)
-	s.Log(format, a...)
+	s.Log(prefix, format, a...)
 }
 
-func (s Service) Log(format string, a ...interface{}) {
+func (s Service) Log(prefix string, format string, a ...interface{}) {
 	if s.devlog == nil {
 		return
 	}
 
 	l := fmt.Sprintf(format, a...)
-	t := time.Now().Format("15:04:05") // "2006-01-02 15:04:05"
-	s.devlog.Write(fmt.Sprintf("[gray][%s][white] %s\n", t, l))
+	ts := time.Now().Format("15:04:05") // "2006-01-02 15:04:05"
+
+	if len(prefix) > 0 {
+		prefix = fmt.Sprintf("[yellow]%s[white] ", prefix)
+	}
+
+	s.devlog.Write(fmt.Sprintf("[gray][%s][white] %s%s\n", ts, prefix, l))
 }

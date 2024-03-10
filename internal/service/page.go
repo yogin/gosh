@@ -17,12 +17,12 @@ type Slider interface {
 }
 
 type Slide struct {
-	service      *Service
-	profile      *config.Profile
-	provider     providers.Provider
-	table        *tview.Table
-	view         *tview.Flex
-	refreshTimer *time.Timer
+	service       *Service
+	profile       *config.Profile
+	provider      providers.Provider
+	table         *tview.Table
+	view          *tview.Flex
+	refreshTicker *time.Ticker
 }
 
 func NewSlide(service *Service, profile *config.Profile) *Slide {
@@ -62,45 +62,61 @@ func NewSlide(service *Service, profile *config.Profile) *Slide {
 		return event
 	})
 
+	if profile.Refresh.Enabled {
+		s.toggleAutoRefresh()
+	}
+
 	return s
 }
 
 func (s *Slide) toggleAutoRefresh() {
-	if s.refreshTimer != nil {
-		s.refreshTimer.Stop()
-		s.refreshTimer = nil
-	} else {
-		s.update()                                            // update immediately before starting the timer
-		s.refreshTimer = time.AfterFunc(time.Minute, func() { // TODO make the interval configurable
-			s.service.Log("Auto-refreshing profile '%s'", s.profile.ID)
-			s.update()
-		})
-		if s.refreshTimer != nil {
-			s.service.SetStatusText("Auto-refreshing profile '%s' every minute", s.profile.ID)
-		}
+	if s.refreshTicker != nil {
+		s.service.SetStatusText(s.profile.ID, "Stopping profile auto-refresh")
+		s.refreshTicker.Stop()
+		return
+	}
+
+	if s.profile.Refresh.Interval <= 0 {
+		s.service.SetStatusText(s.profile.ID, "Invalid Auto-refresh interval: %d seconds", s.profile.Refresh.Interval)
+		return
+	}
+
+	s.update() // update immediately before starting the timer
+
+	s.refreshTicker = time.NewTicker(time.Second * time.Duration(s.profile.Refresh.Interval))
+	go s.startAutoRefresh()
+	if s.refreshTicker != nil {
+		s.service.SetStatusText(s.profile.ID, "Auto-refreshing every %d seconds", s.profile.Refresh.Interval)
+	}
+}
+
+func (s *Slide) startAutoRefresh() {
+	for range s.refreshTicker.C {
+		s.service.Log(s.profile.ID, "Auto-refreshing profile")
+		s.update()
 	}
 }
 
 func (s *Slide) handleSelectedRow(row int, col int) {
-	s.service.Log("Selected row %d (profile:%s)", row, s.profile.ID)
+	s.service.Log(s.profile.ID, "Selected row %d", row)
 
 	cell := s.table.GetCell(row, col)
 	ref := cell.GetReference()
 	instance := s.provider.GetInstanceByID(ref.(string))
 	if instance == nil {
-		s.service.Log("Instance not found for ID %s", ref)
+		s.service.Log(s.profile.ID, "Instance not found for ID %s", ref)
 		return
 	}
 
-	s.service.Log("Selected instance: %+v", instance)
+	s.service.Log(s.profile.ID, "Selected instance: %+v", instance)
 
 	ip := s.provider.GetInstanceIPByID(instance.ID)
 	if ip == "" {
-		s.service.Log("IP address not found for instance %s", instance.ID)
+		s.service.Log(s.profile.ID, "IP address not found for instance %s", instance.ID)
 		return
 	}
 
-	s.service.Log("Connecting to instance %s via %s", instance.ID, ip)
+	s.service.Log(s.profile.ID, "Connecting to instance %s via %s", instance.ID, ip)
 	s.service.GetApp().Suspend(func() {
 		cmd := exec.Command("ssh", ip)
 		cmd.Stdout = os.Stdout
@@ -108,19 +124,19 @@ func (s *Slide) handleSelectedRow(row int, col int) {
 		cmd.Stdin = os.Stdin
 
 		if err := cmd.Run(); err != nil {
-			s.service.SetStatusText("SSH to %s failed: %s", ip, err)
+			s.service.SetStatusText(s.profile.ID, "SSH to %s failed: %s", ip, err)
 		}
 	})
 }
 
 func (s *Slide) update() {
 	if s.provider == nil {
-		s.service.SetStatusText("Error: provider '%s' not found in profile '%s'", s.profile.Provider, s.profile.ID)
+		s.service.SetStatusText(s.profile.ID, "Invalid provider '%s'", s.profile.Provider)
 		return
 	}
 
 	if err := s.provider.LoadInstances(); err != nil {
-		s.service.SetStatusText("Error fetching instances in profile '%s': %s", s.profile.ID, err)
+		s.service.SetStatusText(s.profile.ID, "Error fetching instances: %v", err)
 		return
 	}
 
@@ -132,7 +148,7 @@ func (s *Slide) update() {
 		return
 	}
 
-	s.service.SetStatusText("Found %d instances in profile '%s'", s.provider.InstancesCount(), s.profile.ID)
+	s.service.SetStatusText(s.profile.ID, "Found %d instances", s.provider.InstancesCount())
 
 	s.table.Clear()
 	s.view.Clear()
@@ -210,6 +226,10 @@ func (s *Slide) update() {
 }
 
 func (s *Slide) Get(nextSlide func()) (title string, content tview.Primitive) {
-	s.update()
+	if !s.profile.Refresh.Enabled {
+		// update immediately if auto-refresh is disabled
+		s.update()
+	}
+
 	return s.profile.ID, s.view
 }
