@@ -23,18 +23,19 @@ var (
 )
 
 type Config struct {
-	Version       int                `json:"version" yaml:"version"`
-	Profiles      map[string]Profile `json:"profiles" yaml:"profiles"`
-	ShowUTCTime   bool               `json:"show_utc_time" yaml:"show_utc_time"`     // show UTC time (default: false)
-	ShowLocalTime bool               `json:"show_local_time" yaml:"show_local_time"` // show local time (default: false)
-	TimeFormat    string             `json:"time_format" yaml:"time_format"`         // time format (default: "2006-01-02 15:04:05")
+	Version       int        `json:"version" yaml:"version"`
+	Profiles      []*Profile `json:"profiles" yaml:"profiles"`
+	ShowUTCTime   bool       `json:"show_utc_time" yaml:"show_utc_time"`     // show UTC time (default: false)
+	ShowLocalTime bool       `json:"show_local_time" yaml:"show_local_time"` // show local time (default: false)
+	TimeFormat    string     `json:"time_format" yaml:"time_format"`         // time format (default: "2006-01-02 15:04:05")
 
 	configPath string
 }
 
 type Profile struct {
+	ID             string `json:"id" yaml:"id"`                             // profile id
 	Provider       string `json:"provider" yaml:"provider"`                 // aws, gcp, azure
-	Name           string `json:"name" yaml:"name"`                         // profile name
+	Name           string `json:"name" yaml:"name"`                         // provider profile name
 	Region         string `json:"region" yaml:"region"`                     // region (us-west-1, us-east-1, etc)
 	PreferPublicIP bool   `json:"prefer_public_ip" yaml:"prefer_public_ip"` // prefer public IP over private IP (default: false)
 }
@@ -46,17 +47,12 @@ func NewConfig(path *string) *Config {
 
 	config = DefaultConfiguration()
 
-	// config = &Config{
-	// 	Version:  CurrentConfigVersion,
-	// 	Profiles: make(map[string]Profile),
-	// }
-
 	if path != nil {
 		config.configPath = *path
 	}
 
 	if config.findConfigFile() {
-		config.Profiles = make(map[string]Profile) // reset default profiles if configuration file is found
+		config.Profiles = make([]*Profile, 0) // reset default profiles if configuration file is found
 
 		if err := config.loadConfigFile(); err != nil {
 			fmt.Printf("error: %s\n", err)
@@ -69,12 +65,13 @@ func NewConfig(path *string) *Config {
 
 func DefaultConfiguration() *Config {
 	profile := Profile{
+		ID:       "default",
 		Provider: "aws",
 		Name:     "default",
 	}
 
-	profiles := make(map[string]Profile)
-	profiles["default"] = profile
+	profiles := make([]*Profile, 0)
+	profiles = append(profiles, &profile)
 
 	return &Config{
 		Version:       CurrentConfigVersion,

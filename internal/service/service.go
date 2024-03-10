@@ -34,8 +34,8 @@ func (s *Service) Run() error {
 	s.app = tview.NewApplication()
 
 	slides := make([]Slider, 0, len(s.config.Profiles))
-	for name, profile := range s.config.Profiles {
-		slides = append(slides, NewSlide(s.app, name, &profile))
+	for _, profile := range s.config.Profiles {
+		slides = append(slides, NewSlide(s.app, profile))
 	}
 
 	pages := tview.NewPages()
