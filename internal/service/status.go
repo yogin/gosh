@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rivo/tview"
@@ -14,13 +15,15 @@ type Status struct {
 	leftView  *tview.TextView
 	rightView *tview.TextView
 	view      *tview.Flex
+
+	statusMutex      *sync.Mutex
+	statusClearTimer *time.Timer
 }
 
 func NewStatus(service *Service) *Status {
 	leftView := tview.NewTextView()
 	leftView.SetWrap(false)
 	leftView.SetTextAlign(tview.AlignLeft)
-	leftView.SetText("Gosh, it's a status bar!")
 
 	rightView := tview.NewTextView()
 	rightView.SetWrap(false)
@@ -32,11 +35,13 @@ func NewStatus(service *Service) *Status {
 	view.AddItem(rightView, 0, 1, false)
 
 	status := &Status{
-		service:   service,
-		view:      view,
-		leftView:  leftView,
-		rightView: rightView,
+		service:     service,
+		view:        view,
+		leftView:    leftView,
+		rightView:   rightView,
+		statusMutex: &sync.Mutex{},
 	}
+	status.SetStatusText("Gosh, it's a status bar!")
 	status.update()
 
 	return status
@@ -55,6 +60,24 @@ func (s *Status) Start() {
 			})
 		}
 	}()
+}
+
+func (s *Status) SetStatusText(format string, a ...interface{}) {
+	s.statusMutex.Lock()
+	defer s.statusMutex.Unlock()
+
+	// clear the timer if it's running
+	if s.statusClearTimer != nil {
+		s.statusClearTimer.Stop()
+		s.statusClearTimer = nil
+	}
+
+	s.leftView.SetText(fmt.Sprintf(format, a...))
+
+	// set a new timer to clear the status text
+	s.statusClearTimer = time.AfterFunc(3*time.Second, func() {
+		s.leftView.SetText("")
+	})
 }
 
 func (s *Status) update() {

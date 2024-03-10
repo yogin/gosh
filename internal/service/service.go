@@ -16,6 +16,7 @@ var (
 type Service struct {
 	config *config.Config
 	app    *tview.Application
+	status *Status
 }
 
 func NewService(cfg *config.Config) *Service {
@@ -33,6 +34,10 @@ func NewService(cfg *config.Config) *Service {
 func (s *Service) Run() error {
 	s.app = tview.NewApplication()
 
+	// status must be started before any other component so it can receive status updates
+	s.status = NewStatus(s)
+	s.status.Start()
+
 	slides := make([]Slider, 0, len(s.config.Profiles))
 	for _, profile := range s.config.Profiles {
 		slides = append(slides, NewSlide(s, profile))
@@ -40,44 +45,42 @@ func (s *Service) Run() error {
 
 	pages := tview.NewPages()
 
-	info := tview.NewTextView()
-	info.SetDynamicColors(true)
-	info.SetRegions(true)
-	info.SetWrap(false)
-	info.SetHighlightedFunc(func(added, removed, remaining []string) {
+	menu := tview.NewTextView()
+	menu.SetDynamicColors(true)
+	menu.SetRegions(true)
+	menu.SetWrap(false)
+	menu.SetHighlightedFunc(func(added, removed, remaining []string) {
 		pages.SwitchToPage(added[0])
 	})
 
 	previousSlide := func() {
-		slide, _ := strconv.Atoi(info.GetHighlights()[0])
+		slide, _ := strconv.Atoi(menu.GetHighlights()[0])
 		slide = (slide - 1 + len(slides)) % len(slides)
-		info.Highlight(strconv.Itoa(slide))
-		info.ScrollToHighlight()
+		menu.Highlight(strconv.Itoa(slide))
+		menu.ScrollToHighlight()
 	}
 
 	nextSlide := func() {
-		slide, _ := strconv.Atoi(info.GetHighlights()[0])
+		slide, _ := strconv.Atoi(menu.GetHighlights()[0])
 		slide = (slide + 1) % len(slides)
-		info.Highlight(strconv.Itoa(slide))
-		info.ScrollToHighlight()
+		menu.Highlight(strconv.Itoa(slide))
+		menu.ScrollToHighlight()
 	}
 
 	for idx, slide := range slides {
 		title, primitive := slide.Get(nextSlide)
 		pages.AddPage(strconv.Itoa(idx), primitive, true, idx == 0)
-		fmt.Fprintf(info, `%d ["%d"][darkcyan]%s[white][""]  `, idx+1, idx, title)
+		fmt.Fprintf(menu, `%d ["%d"][darkcyan]%s[white][""]  `, idx+1, idx, title)
 	}
-	info.Highlight("0")
-
-	status := NewStatus(s)
-	status.Start()
+	menu.Highlight("0")
 
 	layout := tview.NewFlex()
 	layout.SetDirection(tview.FlexRow)
-	layout.AddItem(pages, 0, 1, true)         // slides
-	layout.AddItem(info, 1, 1, false)         // page selector
-	layout.AddItem(status.Get(), 1, 1, false) // input and status (time local/utc) line
+	layout.AddItem(pages, 0, 1, true)           // slides
+	layout.AddItem(menu, 1, 1, false)           // page menu selector
+	layout.AddItem(s.status.Get(), 1, 1, false) // input and status (time local/utc) line
 
+	// global input capture, widgets can have their own input capture
 	s.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlN, tcell.KeyTab:
@@ -94,13 +97,16 @@ func (s *Service) Run() error {
 				s.app.Stop()
 				return nil
 
-			case 'r', 'R':
-				// TODO refresh instances
-				return nil
-
 			case 'w', 'W':
 				// TODO write configuation file
 				return nil
+
+			case '`':
+				// TODO toggle debug mode
+				return nil
+
+				// default:
+				// 	s.SetStatusText("Key Pressed Name: %s, Key: %d, Rune: %d", event.Name(), event.Key(), event.Rune())
 			}
 		}
 		return event
@@ -117,4 +123,8 @@ func (s *Service) GetConfig() *config.Config {
 
 func (s *Service) GetApp() *tview.Application {
 	return s.app
+}
+
+func (s Service) SetStatusText(format string, a ...interface{}) {
+	s.status.SetStatusText(format, a...)
 }

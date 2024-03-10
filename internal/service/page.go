@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/yogin/go-ec2/internal/config"
@@ -15,7 +17,8 @@ type Slide struct {
 	service  *Service
 	profile  *config.Profile
 	provider providers.Provider
-	view     *tview.Table
+	table    *tview.Table
+	view     *tview.Flex
 }
 
 func NewSlide(service *Service, profile *config.Profile) *Slide {
@@ -34,24 +37,53 @@ func NewSlide(service *Service, profile *config.Profile) *Slide {
 	table.SetBorderPadding(0, 0, 0, 0)
 	table.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor) // tcell.ColorBlack.TrueColor()
 	table.SetSelectedFunc(s.handleSelectedRow)                      // handles pressing ENTER key on table row
-	s.view = table
+	s.table = table
+
+	view := tview.NewFlex()
+	view.SetDirection(tview.FlexRow)
+	view.AddItem(table, 0, 1, true)
+	s.view = view
+
+	s.view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'r', 'R':
+			s.update()
+			s.service.SetStatusText("Found %d instances in profile '%s'", s.provider.InstancesCount(), s.profile.ID)
+			return nil
+		}
+
+		return event
+	})
 
 	return s
 }
 
 func (s *Slide) handleSelectedRow(row int, col int) {
+	// TODO
 }
 
 func (s *Slide) update() {
 	if s.provider == nil {
-		// s.view.SetText(fmt.Sprintf("Provider '%s' not found in profile '%s'", s.profile.Provider, s.profile.ID))
+		s.service.SetStatusText("Error: provider '%s' not found in profile '%s'", s.profile.Provider, s.profile.ID)
 		return
 	}
 
 	if err := s.provider.LoadInstances(); err != nil {
-		// s.view.SetText(fmt.Sprintf("Error fetching instances in profile '%s': %s", s.profile.ID, err))
+		s.service.SetStatusText("Error fetching instances in profile '%s': %s", s.profile.ID, err)
 		return
 	}
+
+	if s.provider.InstancesCount() == 0 {
+		message := tview.NewTextView()
+		message.SetText(fmt.Sprintf("No instances found in profile '%s'", s.profile.ID))
+		s.view.Clear()
+		s.view.AddItem(message, 0, 1, true)
+		return
+	}
+
+	s.table.Clear()
+	s.view.Clear()
+	s.view.AddItem(s.table, 0, 1, true)
 
 	tagsNames := s.provider.GetTags()
 	tagsCount := len(tagsNames)
@@ -96,7 +128,7 @@ func (s *Slide) update() {
 					SetSelectable(false).
 					SetAttributes(tcell.AttrBold).
 					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
-				s.view.SetCell(0, c, tag)
+				s.table.SetCell(0, c, tag)
 			}
 
 			for c, h := range s.provider.Headers() {
@@ -104,7 +136,7 @@ func (s *Slide) update() {
 					SetSelectable(false).
 					SetAttributes(tcell.AttrBold).
 					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
-				s.view.SetCell(0, c+tagsCount, head)
+				s.table.SetCell(0, c+tagsCount, head)
 			}
 
 			row++
@@ -117,13 +149,11 @@ func (s *Slide) update() {
 				SetReference(instance.ID).
 				SetTextColor(color).
 				SetBackgroundColor(tcell.ColorBlack.TrueColor())
-			s.view.SetCell(row, col, cell)
+			s.table.SetCell(row, col, cell)
 		}
 
 		row++
 	}
-
-	// s.view.SetText(fmt.Sprintf("Welcome to GoSH: %s (%d instances)", s.profile.ID, s.provider.InstancesCount()))
 }
 
 func (s *Slide) Get(nextSlide func()) (title string, content tview.Primitive) {
