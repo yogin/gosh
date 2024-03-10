@@ -69,20 +69,40 @@ func NewConfig(path *string) *Config {
 	return config
 }
 
+func (c *Config) Save() error {
+	data, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	if len(c.configPath) == 0 {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+
+		c.configPath = filepath.Join(home, fmt.Sprintf(".%s", DefaultConfigFile))
+	}
+
+	err = os.WriteFile(c.configPath, data, 0644)
+	return err
+}
+
+func (c *Config) ConfigPath() string {
+	return c.configPath
+}
+
 func DefaultConfiguration() *Config {
 	profile := Profile{
 		ID:       "default",
 		Provider: "aws",
 		Name:     "default",
-		Refresh:  Refresh{Enabled: false, Interval: 60},
+		Refresh:  Refresh{Enabled: true, Interval: 60},
 	}
-
-	profiles := make([]*Profile, 0)
-	profiles = append(profiles, &profile)
 
 	return &Config{
 		Version:       CurrentConfigVersion,
-		Profiles:      profiles,
+		Profiles:      []*Profile{&profile},
 		ShowUTCTime:   true,
 		ShowLocalTime: true,
 		TimeFormat:    DefaultTimeFormat,

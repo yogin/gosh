@@ -16,6 +16,6 @@
 
 .DS_Store
 ec2
-.gosh.yaml
-.gosh.yml
-.gosh.json
+.gosh.yaml*
+.gosh.yml*
+.gosh.json*

@@ -73,6 +73,7 @@ func (s *Slide) toggleAutoRefresh() {
 	if s.refreshTicker != nil {
 		s.service.SetStatusText(s.profile.ID, "Stopping profile auto-refresh")
 		s.refreshTicker.Stop()
+		s.profile.Refresh.Enabled = false
 		return
 	}
 
@@ -86,6 +87,7 @@ func (s *Slide) toggleAutoRefresh() {
 	s.refreshTicker = time.NewTicker(time.Second * time.Duration(s.profile.Refresh.Interval))
 	go s.startAutoRefresh()
 	if s.refreshTicker != nil {
+		s.profile.Refresh.Enabled = true
 		s.service.SetStatusText(s.profile.ID, "Auto-refreshing every %d seconds", s.profile.Refresh.Interval)
 	}
 }

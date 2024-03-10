@@ -39,6 +39,10 @@ func (s *Service) Run() error {
 	// devlog must be started before any other component so it can receive log messages
 	s.devlog = NewDevLog(s)
 
+	if path := s.config.ConfigPath(); path != "" {
+		s.Log("app", "Configuration loaded from %s", s.config.ConfigPath())
+	}
+
 	// status must be started before any other component so it can receive status updates (but after devlog)
 	s.status = NewStatus(s)
 	s.status.Start()
@@ -110,7 +114,11 @@ func (s *Service) Run() error {
 				return nil
 
 			case 'w', 'W':
-				// TODO write configuation file
+				if err := s.config.Save(); err != nil {
+					s.SetStatusText("app", "Error saving configuration: %s", err)
+				} else {
+					s.SetStatusText("app", "Configuration saved to %s", s.config.ConfigPath())
+				}
 				return nil
 
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
