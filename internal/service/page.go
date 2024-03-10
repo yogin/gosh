@@ -1,8 +1,7 @@
 package service
 
 import (
-	"fmt"
-
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/yogin/go-ec2/internal/config"
 	"github.com/yogin/go-ec2/internal/providers"
@@ -16,7 +15,7 @@ type Slide struct {
 	app      *tview.Application
 	profile  *config.Profile
 	provider providers.Provider
-	view     *tview.TextView
+	view     *tview.Table
 }
 
 func NewSlide(app *tview.Application, profile *config.Profile) *Slide {
@@ -29,7 +28,11 @@ func NewSlide(app *tview.Application, profile *config.Profile) *Slide {
 		s.provider = p
 	}
 
-	view := tview.NewTextView()
+	view := tview.NewTable()
+	view.SetFixed(1, 0)
+	view.SetSelectable(true, false)
+	view.SetBorderPadding(0, 0, 0, 0)
+	view.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor) // tcell.ColorBlack.TrueColor()
 	s.view = view
 
 	return s
@@ -37,16 +40,86 @@ func NewSlide(app *tview.Application, profile *config.Profile) *Slide {
 
 func (s *Slide) update() {
 	if s.provider == nil {
-		s.view.SetText(fmt.Sprintf("Provider '%s' not found in profile '%s'", s.profile.Provider, s.profile.ID))
+		// s.view.SetText(fmt.Sprintf("Provider '%s' not found in profile '%s'", s.profile.Provider, s.profile.ID))
 		return
 	}
 
-	if err := s.provider.Instances(); err != nil {
-		s.view.SetText(fmt.Sprintf("Error fetching instances in profile '%s': %s", s.profile.ID, err))
+	if err := s.provider.LoadInstances(); err != nil {
+		// s.view.SetText(fmt.Sprintf("Error fetching instances in profile '%s': %s", s.profile.ID, err))
 		return
 	}
 
-	s.view.SetText(fmt.Sprintf("Welcome to GoSH: %s (%d instances)", s.profile.ID, s.provider.InstancesCount()))
+	tagsNames := s.provider.GetTags()
+	tagsCount := len(tagsNames)
+	instances := s.provider.GetInstances()
+
+	row := 0
+	for _, instance := range instances {
+		// https://godoc.org/github.com/rivo/tview#hdr-Colors
+		// https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#Color
+		// https://www.w3schools.com/colors/colors_names.asp
+		color := tcell.ColorWhite.TrueColor()
+		switch instance.State {
+		case "terminated", "stopped":
+			color = tcell.ColorGrey.TrueColor()
+		case "pending", "stopping", "shutting-down":
+			color = tcell.ColorCrimson.TrueColor()
+		case "running":
+			if instance.IsRunningLessThan(15) { // 15 minutes
+				color = tcell.ColorPaleGreen.TrueColor()
+			} else if instance.IsRunningMoreThan(129600) { //  129600 minutes = 90 days (1 quarter)
+				color = tcell.ColorOrange.TrueColor()
+			}
+		}
+
+		tags := instance.TagValues(tagsNames)
+		vals := []string{
+			instance.ID,
+			instance.PrivateIP,
+			instance.PublicIP,
+			instance.State,
+			instance.AZ,
+			instance.Type,
+			instance.AMI,
+			instance.RunningDescription(),
+		}
+		values := append(tags, vals...)
+
+		// headers
+		if row == 0 {
+			for c, t := range tagsNames {
+				tag := tview.NewTableCell("Tag:" + t).
+					SetSelectable(false).
+					SetAttributes(tcell.AttrBold).
+					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
+				s.view.SetCell(0, c, tag)
+			}
+
+			for c, h := range s.provider.Headers() {
+				head := tview.NewTableCell(h).
+					SetSelectable(false).
+					SetAttributes(tcell.AttrBold).
+					SetBackgroundColor(tcell.ColorDimGrey.TrueColor())
+				s.view.SetCell(0, c+tagsCount, head)
+			}
+
+			row++
+		}
+
+		// instances
+		for col, val := range values {
+			cell := tview.NewTableCell(val).
+				SetSelectable(true).
+				SetReference(instance.ID).
+				SetTextColor(color).
+				SetBackgroundColor(tcell.ColorBlack.TrueColor())
+			s.view.SetCell(row, col, cell)
+		}
+
+		row++
+	}
+
+	// s.view.SetText(fmt.Sprintf("Welcome to GoSH: %s (%d instances)", s.profile.ID, s.provider.InstancesCount()))
 }
 
 func (s *Slide) Get(nextSlide func()) (title string, content tview.Primitive) {

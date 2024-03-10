@@ -9,10 +9,12 @@ const (
 )
 
 type Provider interface {
-	Type() ProviderType  // Type returns the provider type
-	Headers() []string   // Headers returns the table headers
-	Instances() error    // Instances lists all instances
-	InstancesCount() int // InstancesCount returns the number of instances
+	Type() ProviderType        // Type returns the provider type
+	Headers() []string         // Headers returns the table headers
+	LoadInstances() error      // LoadInstances queries the provider for all instances
+	InstancesCount() int       // InstancesCount returns the number of instances
+	GetTags() []string         // GetTags returns the list of tags across all instances
+	GetInstances() []*Instance // GetInstances returns the list of instances
 }
 
 func NewProvider(provider string, profile *config.Profile) Provider {

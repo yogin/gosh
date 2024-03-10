@@ -2,6 +2,7 @@ package providers
 
 import (
 	"log"
+	"sort"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -10,16 +11,18 @@ import (
 	"github.com/yogin/go-ec2/internal/config"
 )
 
+var AWSDefaultTags = []string{"name", "env", "environment", "stage", "role", "build", "version"}
+
 type AWSProvider struct {
 	profile   *config.Profile
 	svc       *ec2.EC2
-	instances map[string]*AWSInstance
+	instances map[string]*Instance
 }
 
 func NewAWSProvider(profile *config.Profile) *AWSProvider {
 	p := &AWSProvider{
 		profile:   profile,
-		instances: make(map[string]*AWSInstance),
+		instances: make(map[string]*Instance),
 	}
 
 	creds := credentials.NewChainCredentials(
@@ -57,19 +60,20 @@ func (p *AWSProvider) Type() ProviderType {
 }
 
 func (p *AWSProvider) Headers() []string {
-	return []string{"ID", "Name", "Type", "State", "Public IP", "Private IP"}
+	// return []string{"ID", "Name", "Type", "State", "Public IP", "Private IP"}
+	return []string{"ID", "Private IP", "Public IP", "State", "AZ", "Type", "AMI", "Running"}
 }
 
-func (p *AWSProvider) Instances() error {
+func (p *AWSProvider) LoadInstances() error {
 	res, err := p.svc.DescribeInstances(&ec2.DescribeInstancesInput{})
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
-	insts := make(map[string]*AWSInstance)
+	insts := make(map[string]*Instance)
 	for _, reservation := range res.Reservations {
 		for _, instance := range reservation.Instances {
-			i := NewAWSInstance(instance)
+			i := NewInstance(instance)
 			insts[i.ID] = i
 		}
 	}
@@ -80,4 +84,35 @@ func (p *AWSProvider) Instances() error {
 
 func (p *AWSProvider) InstancesCount() int {
 	return len(p.instances)
+}
+
+func (p *AWSProvider) GetTags() []string {
+	t := make(map[string]struct{})
+
+	for _, i := range p.instances {
+		for tag := range i.Tags {
+			if _, ok := t[tag]; !ok {
+				t[tag] = struct{}{}
+			}
+		}
+	}
+
+	keys := []string{}
+	for _, tag := range AWSDefaultTags {
+		if _, ok := t[tag]; ok {
+			keys = append(keys, tag)
+		}
+	}
+
+	return keys
+}
+
+func (p *AWSProvider) GetInstances() []*Instance {
+	insts := []*Instance{}
+	for _, i := range p.instances {
+		insts = append(insts, i)
+	}
+	sort.Sort(AWSInstanceSorter(insts))
+
+	return insts
 }

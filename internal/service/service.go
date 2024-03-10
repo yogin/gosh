@@ -74,7 +74,7 @@ func (s *Service) Run() error {
 
 	layout := tview.NewFlex()
 	layout.SetDirection(tview.FlexRow)
-	layout.AddItem(pages, 0, 1, false)        // slides
+	layout.AddItem(pages, 0, 1, true)         // slides
 	layout.AddItem(info, 1, 1, false)         // page selector
 	layout.AddItem(status.Get(), 1, 1, false) // input and status (time local/utc) line
 
