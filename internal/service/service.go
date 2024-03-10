@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -17,6 +18,7 @@ type Service struct {
 	config *config.Config
 	app    *tview.Application
 	status *Status
+	devlog *DevLog
 }
 
 func NewService(cfg *config.Config) *Service {
@@ -74,14 +76,23 @@ func (s *Service) Run() error {
 	}
 	menu.Highlight("0")
 
+	s.devlog = NewDevLog(s)
+
+	main := tview.NewFlex()
+	main.SetDirection(tview.FlexColumn)
+	main.AddItem(pages, 0, 1, true)                         // slides
+	main.AddItem(s.devlog.Get(), 0, s.devlog.Size(), false) // page menu selector
+
 	layout := tview.NewFlex()
 	layout.SetDirection(tview.FlexRow)
-	layout.AddItem(pages, 0, 1, true)           // slides
+	layout.AddItem(main, 0, 1, true)            // slides
 	layout.AddItem(menu, 1, 1, false)           // page menu selector
 	layout.AddItem(s.status.Get(), 1, 1, false) // input and status (time local/utc) line
 
 	// global input capture, widgets can have their own input capture
 	s.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		s.Log("Key pressed Name=%s, Key=%d, Rune=%d", event.Name(), event.Key(), event.Rune())
+
 		switch event.Key() {
 		case tcell.KeyCtrlN, tcell.KeyTab:
 			nextSlide()
@@ -101,12 +112,21 @@ func (s *Service) Run() error {
 				// TODO write configuation file
 				return nil
 
-			case '`':
-				// TODO toggle debug mode
-				return nil
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				slideID, _ := strconv.Atoi(string(event.Rune()))
+				slideName := strconv.Itoa(slideID - 1)
+				if pages.HasPage(slideName) {
+					s.Log("Page found: %s (%d)", slideName, slideID)
+					pages.SwitchToPage(slideName)
+					menu.Highlight(slideName)
+					menu.ScrollToHighlight()
+				} else {
+					s.Log("Page not found: %s (%d)", slideName, slideID)
+				}
 
-				// default:
-				// 	s.SetStatusText("Key Pressed Name: %s, Key: %d, Rune: %d", event.Name(), event.Key(), event.Rune())
+			case '`':
+				main.ResizeItem(s.devlog.Get(), 0, s.devlog.Toggle())
+				return nil
 			}
 		}
 		return event
@@ -126,5 +146,20 @@ func (s *Service) GetApp() *tview.Application {
 }
 
 func (s Service) SetStatusText(format string, a ...interface{}) {
+	if s.status == nil {
+		return
+	}
+
 	s.status.SetStatusText(format, a...)
+	s.Log(format, a...)
+}
+
+func (s Service) Log(format string, a ...interface{}) {
+	if s.devlog == nil {
+		return
+	}
+
+	l := fmt.Sprintf(format, a...)
+	t := time.Now().Format("15:04:05") // "2006-01-02 15:04:05"
+	s.devlog.Write(fmt.Sprintf("[%s] %s\n", t, l))
 }
