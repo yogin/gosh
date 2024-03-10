@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -68,8 +70,8 @@ func (s *Slide) toggleAutoRefresh() {
 		s.refreshTimer.Stop()
 		s.refreshTimer = nil
 	} else {
-		s.update() // update immediately before starting the timer
-		s.refreshTimer = time.AfterFunc(time.Minute, func() {
+		s.update()                                            // update immediately before starting the timer
+		s.refreshTimer = time.AfterFunc(time.Minute, func() { // TODO make the interval configurable
 			s.service.Log("Auto-refreshing profile '%s'", s.profile.ID)
 			s.update()
 		})
@@ -81,7 +83,34 @@ func (s *Slide) toggleAutoRefresh() {
 
 func (s *Slide) handleSelectedRow(row int, col int) {
 	s.service.Log("Selected row %d (profile:%s)", row, s.profile.ID)
-	// TODO
+
+	cell := s.table.GetCell(row, col)
+	ref := cell.GetReference()
+	instance := s.provider.GetInstanceByID(ref.(string))
+	if instance == nil {
+		s.service.Log("Instance not found for ID %s", ref)
+		return
+	}
+
+	s.service.Log("Selected instance: %+v", instance)
+
+	ip := s.provider.GetInstanceIPByID(instance.ID)
+	if ip == "" {
+		s.service.Log("IP address not found for instance %s", instance.ID)
+		return
+	}
+
+	s.service.Log("Connecting to instance %s via %s", instance.ID, ip)
+	s.service.GetApp().Suspend(func() {
+		cmd := exec.Command("ssh", ip)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+
+		if err := cmd.Run(); err != nil {
+			s.service.SetStatusText("SSH to %s failed: %s", ip, err)
+		}
+	})
 }
 
 func (s *Slide) update() {

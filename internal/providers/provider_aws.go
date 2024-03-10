@@ -3,6 +3,7 @@ package providers
 import (
 	"log"
 	"sort"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -17,12 +18,14 @@ type AWSProvider struct {
 	profile   *config.Profile
 	svc       *ec2.EC2
 	instances map[string]*Instance
+	mutex     sync.Mutex
 }
 
 func NewAWSProvider(profile *config.Profile) *AWSProvider {
 	p := &AWSProvider{
 		profile:   profile,
 		instances: make(map[string]*Instance),
+		mutex:     sync.Mutex{},
 	}
 
 	creds := credentials.NewChainCredentials(
@@ -65,6 +68,9 @@ func (p *AWSProvider) Headers() []string {
 }
 
 func (p *AWSProvider) LoadInstances() error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	res, err := p.svc.DescribeInstances(&ec2.DescribeInstancesInput{})
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -83,10 +89,16 @@ func (p *AWSProvider) LoadInstances() error {
 }
 
 func (p *AWSProvider) InstancesCount() int {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	return len(p.instances)
 }
 
 func (p *AWSProvider) GetTags() []string {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	t := make(map[string]struct{})
 
 	for _, i := range p.instances {
@@ -108,6 +120,9 @@ func (p *AWSProvider) GetTags() []string {
 }
 
 func (p *AWSProvider) GetInstances() []*Instance {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	insts := []*Instance{}
 	for _, i := range p.instances {
 		insts = append(insts, i)
@@ -115,4 +130,30 @@ func (p *AWSProvider) GetInstances() []*Instance {
 	sort.Sort(AWSInstanceSorter(insts))
 
 	return insts
+}
+
+func (p *AWSProvider) GetInstanceByID(id string) *Instance {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	if i, ok := p.instances[id]; ok {
+		return i
+	}
+	return nil
+}
+
+func (p *AWSProvider) GetInstanceIPByID(id string) string {
+	instance := p.GetInstanceByID(id)
+	if instance == nil {
+		return ""
+	}
+
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	if p.profile.PreferPublicIP && len(instance.PublicIP) > 0 {
+		return instance.PublicIP
+	}
+
+	return instance.PrivateIP
 }
