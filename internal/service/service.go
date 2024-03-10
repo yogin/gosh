@@ -161,5 +161,5 @@ func (s Service) Log(format string, a ...interface{}) {
 
 	l := fmt.Sprintf(format, a...)
 	t := time.Now().Format("15:04:05") // "2006-01-02 15:04:05"
-	s.devlog.Write(fmt.Sprintf("[%s] %s\n", t, l))
+	s.devlog.Write(fmt.Sprintf("[gray][%s][white] %s\n", t, l))
 }

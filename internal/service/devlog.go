@@ -23,6 +23,7 @@ func NewDevLog(service *Service) *DevLog {
 	view.SetDynamicColors(true)
 	view.SetBorder(true)
 	view.SetTitle(" Dev Log ")
+	view.SetScrollable(true)
 	view.SetChangedFunc(func() {
 		view.ScrollToEnd()
 	})
