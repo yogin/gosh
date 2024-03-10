@@ -1,6 +1,8 @@
 package providers
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -9,13 +11,15 @@ import (
 )
 
 type AWSProvider struct {
-	profile *config.Profile
-	svc     *ec2.EC2
+	profile   *config.Profile
+	svc       *ec2.EC2
+	instances map[string]*AWSInstance
 }
 
 func NewAWSProvider(profile *config.Profile) *AWSProvider {
 	p := &AWSProvider{
-		profile: profile,
+		profile:   profile,
+		instances: make(map[string]*AWSInstance),
 	}
 
 	creds := credentials.NewChainCredentials(
@@ -29,6 +33,8 @@ func NewAWSProvider(profile *config.Profile) *AWSProvider {
 
 	conf := aws.Config{
 		Credentials: creds,
+		// CredentialsChainVerboseErrors: aws.Bool(true),
+		// HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	}
 
 	if len(p.profile.Region) > 0 {
@@ -55,5 +61,23 @@ func (p *AWSProvider) Headers() []string {
 }
 
 func (p *AWSProvider) Instances() error {
+	res, err := p.svc.DescribeInstances(&ec2.DescribeInstancesInput{})
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	insts := make(map[string]*AWSInstance)
+	for _, reservation := range res.Reservations {
+		for _, instance := range reservation.Instances {
+			i := NewAWSInstance(instance)
+			insts[i.ID] = i
+		}
+	}
+	p.instances = insts
+
 	return nil
+}
+
+func (p *AWSProvider) InstancesCount() int {
+	return len(p.instances)
 }

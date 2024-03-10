@@ -41,7 +41,12 @@ func (s *Slide) update() {
 		return
 	}
 
-	s.view.SetText(fmt.Sprintf("Welcome to GoSH: %s", s.profile.ID))
+	if err := s.provider.Instances(); err != nil {
+		s.view.SetText(fmt.Sprintf("Error fetching instances in profile '%s': %s", s.profile.ID, err))
+		return
+	}
+
+	s.view.SetText(fmt.Sprintf("Welcome to GoSH: %s (%d instances)", s.profile.ID, s.provider.InstancesCount()))
 }
 
 func (s *Slide) Get(nextSlide func()) (title string, content tview.Primitive) {
