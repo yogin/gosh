@@ -10,20 +10,34 @@ import (
 )
 
 type Status struct {
-	config *config.Config
-	view   *tview.TextView
-	app    *tview.Application
+	config    *config.Config
+	leftView  *tview.TextView
+	rightView *tview.TextView
+	view      *tview.Flex
+	app       *tview.Application
 }
 
 func NewStatus(app *tview.Application, cfg *config.Config) *Status {
-	view := tview.NewTextView()
-	view.SetWrap(false)
-	view.SetTextAlign(tview.AlignRight)
+	leftView := tview.NewTextView()
+	leftView.SetWrap(false)
+	leftView.SetTextAlign(tview.AlignLeft)
+	leftView.SetText("Gosh, it's a status bar!")
+
+	rightView := tview.NewTextView()
+	rightView.SetWrap(false)
+	rightView.SetTextAlign(tview.AlignRight)
+
+	view := tview.NewFlex()
+	view.SetDirection(tview.FlexColumn)
+	view.AddItem(leftView, 0, 1, false)
+	view.AddItem(rightView, 0, 1, false)
 
 	status := &Status{
-		config: cfg,
-		view:   view,
-		app:    app,
+		config:    cfg,
+		view:      view,
+		leftView:  leftView,
+		rightView: rightView,
+		app:       app,
 	}
 	status.update()
 
@@ -46,7 +60,7 @@ func (s *Status) Start() {
 }
 
 func (s *Status) update() {
-	s.view.SetText(s.renderTime())
+	s.rightView.SetText(s.renderTime())
 }
 
 func (s *Status) renderTime() string {
