@@ -28,14 +28,18 @@ func NewSlide(app *tview.Application, profile *config.Profile) *Slide {
 		s.provider = p
 	}
 
-	view := tview.NewTable()
-	view.SetFixed(1, 0)
-	view.SetSelectable(true, false)
-	view.SetBorderPadding(0, 0, 0, 0)
-	view.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor) // tcell.ColorBlack.TrueColor()
-	s.view = view
+	table := tview.NewTable()
+	table.SetFixed(1, 0)
+	table.SetSelectable(true, false)
+	table.SetBorderPadding(0, 0, 0, 0)
+	table.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor) // tcell.ColorBlack.TrueColor()
+	table.SetSelectedFunc(s.handleSelectedRow)                      // handles pressing ENTER key on table row
+	s.view = table
 
 	return s
+}
+
+func (s *Slide) handleSelectedRow(row int, col int) {
 }
 
 func (s *Slide) update() {

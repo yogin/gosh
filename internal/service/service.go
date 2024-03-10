@@ -83,9 +83,25 @@ func (s *Service) Run() error {
 		case tcell.KeyCtrlN, tcell.KeyTab:
 			nextSlide()
 			return nil
+
 		case tcell.KeyCtrlP:
 			previousSlide()
 			return nil
+
+		default:
+			switch event.Rune() {
+			case 'q', 'Q':
+				s.app.Stop()
+				return nil
+
+			case 'r', 'R':
+				// TODO refresh instances
+				return nil
+
+			case 'w', 'W':
+				// TODO write configuation file
+				return nil
+			}
 		}
 		return event
 	})
