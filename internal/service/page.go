@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -14,11 +15,12 @@ type Slider interface {
 }
 
 type Slide struct {
-	service  *Service
-	profile  *config.Profile
-	provider providers.Provider
-	table    *tview.Table
-	view     *tview.Flex
+	service      *Service
+	profile      *config.Profile
+	provider     providers.Provider
+	table        *tview.Table
+	view         *tview.Flex
+	refreshTimer *time.Timer
 }
 
 func NewSlide(service *Service, profile *config.Profile) *Slide {
@@ -46,9 +48,12 @@ func NewSlide(service *Service, profile *config.Profile) *Slide {
 
 	s.view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
-		case 'r', 'R':
+		case 'r': // refresh
 			s.update()
-			s.service.SetStatusText("Found %d instances in profile '%s'", s.provider.InstancesCount(), s.profile.ID)
+			return nil
+
+		case 'R': // toggle auto-refresh (every minute)
+			s.toggleAutoRefresh()
 			return nil
 		}
 
@@ -58,7 +63,24 @@ func NewSlide(service *Service, profile *config.Profile) *Slide {
 	return s
 }
 
+func (s *Slide) toggleAutoRefresh() {
+	if s.refreshTimer != nil {
+		s.refreshTimer.Stop()
+		s.refreshTimer = nil
+	} else {
+		s.update() // update immediately before starting the timer
+		s.refreshTimer = time.AfterFunc(time.Minute, func() {
+			s.service.Log("Auto-refreshing profile '%s'", s.profile.ID)
+			s.update()
+		})
+		if s.refreshTimer != nil {
+			s.service.SetStatusText("Auto-refreshing profile '%s' every minute", s.profile.ID)
+		}
+	}
+}
+
 func (s *Slide) handleSelectedRow(row int, col int) {
+	s.service.Log("Selected row %d (profile:%s)", row, s.profile.ID)
 	// TODO
 }
 
@@ -80,6 +102,8 @@ func (s *Slide) update() {
 		s.view.AddItem(message, 0, 1, true)
 		return
 	}
+
+	s.service.SetStatusText("Found %d instances in profile '%s'", s.provider.InstancesCount(), s.profile.ID)
 
 	s.table.Clear()
 	s.view.Clear()
