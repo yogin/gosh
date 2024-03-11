@@ -19,3 +19,5 @@ ec2
 .gosh.yaml*
 .gosh.yml*
 .gosh.json*
+
+dist/
