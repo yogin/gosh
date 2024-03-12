@@ -133,7 +133,7 @@ func (s *Service) Run() error {
 					s.Log("app", "Page not found: %s (%d)", slideName, slideID)
 				}
 
-			case '`':
+			case '~':
 				main.ResizeItem(s.devlog.Get(), 0, s.devlog.Toggle())
 				return nil
 			}
