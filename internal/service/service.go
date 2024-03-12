@@ -7,7 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/yogin/go-ec2/internal/config"
+	"github.com/yogin/gosh/internal/config"
 )
 
 var (

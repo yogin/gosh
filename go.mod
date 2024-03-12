@@ -1,4 +1,4 @@
-module github.com/yogin/go-ec2
+module github.com/yogin/gosh
 
 go 1.21
 

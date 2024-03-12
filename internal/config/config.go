@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yogin/go-ec2/internal/utils"
+	"github.com/yogin/gosh/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 

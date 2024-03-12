@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/rivo/tview"
-	"github.com/yogin/go-ec2/internal/config"
+	"github.com/yogin/gosh/internal/config"
 )
 
 type Status struct {

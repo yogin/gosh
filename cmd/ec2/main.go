@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/yogin/go-ec2/service"
+	"github.com/yogin/gosh/service"
 )
 
 func main() {

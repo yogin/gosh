@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yogin/go-ec2/internal/config"
-	"github.com/yogin/go-ec2/internal/service"
+	"github.com/yogin/gosh/internal/config"
+	"github.com/yogin/gosh/internal/service"
 )
 
 func main() {

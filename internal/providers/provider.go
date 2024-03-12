@@ -1,6 +1,6 @@
 package providers
 
-import "github.com/yogin/go-ec2/internal/config"
+import "github.com/yogin/gosh/internal/config"
 
 type ProviderType string
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/yogin/go-ec2/internal/utils"
+	"github.com/yogin/gosh/internal/utils"
 )
 
 // type Instance interface {

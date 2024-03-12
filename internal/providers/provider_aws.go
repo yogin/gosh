@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/yogin/go-ec2/internal/config"
+	"github.com/yogin/gosh/internal/config"
 )
 
 var AWSDefaultTags = []string{"name", "env", "environment", "stage", "role", "build", "version"}
