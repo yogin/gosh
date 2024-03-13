@@ -61,12 +61,12 @@ brews:
     repository:
       owner: yogin
       name: homebrew-tap
-      branch: "{{ .ProjectName }}/{{ .Version }}"
+      branch: "{{ .ProjectName }}-{{ .Version }}"
       pull_request:
         enabled: true
         draft: true
         base:
           branch: master
       git:
-        url: "ssh://git@github.com:yogin/homebrew-tap.git"
+        url: "git@github.com:yogin/homebrew-tap.git"
         private_key: "{{ .Env.PRIVATE_KEY_PATH }}"
