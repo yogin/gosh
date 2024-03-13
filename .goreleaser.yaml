@@ -45,3 +45,27 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  - name: gosh
+    alternative_names:
+      - gosh@{{ .Version }}
+      - gosh@{{ .Major }}
+      - gosh@{{ .Major }}.{{ .Minor }}
+    url_template: "https://github.com/yogin/gosh/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    homepage: "https://github.com/yogin/gosh"
+    description: "CLI to list and access cloud instances"
+    license: "MIT"
+    repository:
+      owner: yogin
+      name: homebrew-tap
+      branch: "{{ .ProjectName }}/{{ .Version }}"
+      pull_request:
+        enabled: true
+        draft: true
+        base:
+          branch: master
+      git:
+        url: "ssh://git@github.com:yogin/homebrew-tap.git"
