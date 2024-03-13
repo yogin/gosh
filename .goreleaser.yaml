@@ -69,4 +69,4 @@ brews:
           branch: master
       git:
         url: "ssh://git@github.com:yogin/homebrew-tap.git"
-        private_key: "~/.ssh/yogin.id_rsa"
+        private_key: "{{ .Env.PRIVATE_KEY_PATH }}"
