@@ -37,7 +37,9 @@ func (s *Service) Run() error {
 	s.app = tview.NewApplication()
 
 	// devlog must be started before any other component so it can receive log messages
-	s.devlog = NewDevLog(s)
+	if s.config.Developer {
+		s.devlog = NewDevLog(s)
+	}
 
 	if path := s.config.ConfigPath(); path != "" {
 		s.Log("app", "Configuration loaded from %s", s.config.ConfigPath())
@@ -85,8 +87,10 @@ func (s *Service) Run() error {
 
 	main := tview.NewFlex()
 	main.SetDirection(tview.FlexColumn)
-	main.AddItem(pages, 0, 1, true)                         // slides
-	main.AddItem(s.devlog.Get(), 0, s.devlog.Size(), false) // page menu selector
+	main.AddItem(pages, 0, 1, true) // slides
+	if s.devlog != nil {
+		main.AddItem(s.devlog.Get(), 0, s.devlog.Size(), false) // page menu selector
+	}
 
 	layout := tview.NewFlex()
 	layout.SetDirection(tview.FlexRow)
@@ -134,6 +138,10 @@ func (s *Service) Run() error {
 				}
 
 			case '~':
+				if s.devlog == nil {
+					break
+				}
+
 				main.ResizeItem(s.devlog.Get(), 0, s.devlog.Toggle())
 				return nil
 			}

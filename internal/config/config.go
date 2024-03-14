@@ -28,6 +28,7 @@ type Config struct {
 	ShowUTCTime   bool       `json:"show_utc_time" yaml:"show_utc_time"`     // show UTC time (default: false)
 	ShowLocalTime bool       `json:"show_local_time" yaml:"show_local_time"` // show local time (default: false)
 	TimeFormat    string     `json:"time_format" yaml:"time_format"`         // time format (default: "2006-01-02 15:04:05")
+	Developer     bool       `json:"developer" yaml:"developer"`             // developer mode (default: false)
 
 	configPath string
 }
