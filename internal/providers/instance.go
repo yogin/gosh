@@ -143,6 +143,10 @@ func (a AWSInstanceSorter) Len() int {
 }
 
 func (a AWSInstanceSorter) Less(i, j int) bool {
+	if (a[i].Tags["name"] == "deployer") != (a[j].Tags["name"] == "deployer") {
+		return a[i].Tags["name"] == "deployer"
+	}
+
 	for _, key := range AWSDefaultTags {
 		if a[i].Tags[key] < a[j].Tags[key] {
 			return true
