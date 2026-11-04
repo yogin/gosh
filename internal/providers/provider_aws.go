@@ -80,6 +80,9 @@ func (p *AWSProvider) LoadInstances() error {
 	for _, reservation := range res.Reservations {
 		for _, instance := range reservation.Instances {
 			i := NewInstance(instance)
+			if i.Tags["name"] == "Deploy" {
+				continue
+			}
 			insts[i.ID] = i
 		}
 	}
